@@ -1,0 +1,5 @@
+# Ignore everything in this directory
+*
+# Except our files
+!.gitignore
+!m4-ax_*

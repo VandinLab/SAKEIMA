@@ -6,14 +6,12 @@ import time
 
 datasets = ['SRS024075','SRS024388','SRS011239','SRS075404','SRS043663','SRS062761']
 datasets_size = [8819242497,7924744349,8135441782,7754975225,9156418180,8265706595]
-outputfile = "all_results_dist_final_parallel.csv"
-jellyfish_path = "../jellyfish/sampling-jellyfish-dev/bin/jellyfish"
-work_dir_path = "test_dist_samp_par/"
+outputfile = "all_results.csv"
+jellyfish_path = "../bin/jellyfish"
+work_dir_path = "work_dir/"
 temp_file_path = "out_sampling_"+str(np.random.randint(100000))+".txt"
 k = 31
 n = float(10**9)
-thetas = [ 0 , 1./n , 2./n , 5./n , 10./n , 50./n , 100./n , 250./n , 500./n , 1000./n ]
-print thetas
 lambdas = np.linspace(0.1,1.0,10).tolist()
 print lambdas
 delta = 0.05

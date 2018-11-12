@@ -48,10 +48,10 @@ option("bf-fp") {
   description "False positive rate of bloom filter"
   double; default 0.01 }
 option("eprob","e") {
-  description "Probability of inserting a k-mer in the first pass"
+  description "SAKEIMA (using epsilon-net method): Probability of inserting every k-mer position in the first pass"
   double; default 1.0 }
-option("sprob","j") {
-  description "Poisson constant for sampling pass"
+option("lambda") {
+  description "SAKEIMA (sampling method): Poisson constant for sampling k-mers"
   double; default 1.0 }
 option("if") {
   description "Count only k-mers in this files"

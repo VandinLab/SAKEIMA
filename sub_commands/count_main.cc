@@ -193,17 +193,17 @@ public:
         //bool __debug1__ = false;
         //bool __debug2__ = false;
         double random_number = 0.0;
-        double e_minus_lambda = set_probability;
+        double e_minus_lambda = exp(-set_probability);
         double poisson_probability_ = e_minus_lambda;
         int seed = rand() % 1000;
         CRandomMersenne rng_(seed);
 
-        /*{
+        {
           std::stringstream msg;
           msg << thid << " e_minus_lambda " << e_minus_lambda << "\n";
           msg << thid << " seed " << seed;
           std::cout << msg.str() << std::endl;
-        }*/
+        }
 
         for( ; mers; ++mers) {
             ++total;
@@ -474,24 +474,12 @@ int count_main(int argc, char *argv[])
     mer_filter.reset(new filter_bf(*bf));
   }
 
-  std::cout << " first pass begin " << std::endl;
-
-  std::cout << " args.sprob_arg " << args.sprob_arg << std::endl;
-
   double prob_to_pass = 1.0;
-  if (args.eprob_arg < 1.0){
-    std::cout << " epsilon net mode (two pass) selected " << std::endl;
-    std::cout << " args.eprob_arg " << args.eprob_arg << std::endl;
-    do_op = FIRST_PASS;
-    prob_to_pass = args.eprob_arg;
-  }
-  else{
-    if(args.sprob_arg < 1.0){
-      std::cout << " sampling mode (one pass) selected " << std::endl;
-      std::cout << " args.sprob_arg " << args.sprob_arg << std::endl;
-      do_op = SAMPLING_PASS;
-      prob_to_pass = args.sprob_arg;
-    }
+  if(args.lambda_arg < 1.0){
+    std::cout << " sampling mode (one pass) selected " << std::endl;
+    std::cout << " args.lambda_arg " << args.lambda_arg << std::endl;
+    do_op = SAMPLING_PASS;
+    prob_to_pass = args.lambda_arg;
   }
 
   std::cout << " starting to count... " << std::endl;
@@ -514,8 +502,6 @@ int count_main(int argc, char *argv[])
       err::die("Some generator commands failed");
     generator_manager.reset();
   }
-
-
 
 
   // SECOND PASS

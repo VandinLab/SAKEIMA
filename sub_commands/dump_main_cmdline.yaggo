@@ -8,8 +8,8 @@ option("column", "c") {
   description "Column format"
   flag; off }
 option("bagsell") {
-  description "parameter ell for sampling"
-  uint64; }
+  description "SAKEIMA: parameter ell for sampling"
+  uint64; default "1"}
 option("totalkmers") {
   description "sum of counts from k-mers"
   uint64; }
@@ -35,8 +35,11 @@ option("distratio2") {
   description "lambda if dist 2 is a sample"
   double; default "1.0" }
 option("theta") {
-  description "theta parameter for sampling"
+  description "SAKEIMA: theta parameter for sampling"
   double; default "0.0" }
+option("delta") {
+  description "SAKEIMA: theta parameter for sampling"
+  double; default "0.1" }
 arg("db") {
   description "Jellyfish database"
   c_string; typestr "path" }

@@ -37,6 +37,7 @@
 #include <sub_commands/dump_main_cmdline.hpp>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <boost/functional/hash.hpp>
 
 namespace err = jellyfish::err;
 
@@ -49,19 +50,27 @@ inline double as_seconds(DtnType dtn) { return duration_cast<duration<double>>(d
 
 static dump_main_cmdline args; // Command line switches and arguments
 
-uint64_t get_key(std::string& kmer , std::unordered_map<char, int>& nucleotide_map , int mer_len_arg){
-  uint64_t key = 0;
+typedef std::vector<uint8_t> key_type;
+
+void get_key(key_type& key , std::string& kmer , std::unordered_map<char, int>& nucleotide_map , int mer_len_arg){
+  int j = 0;
+  int size_ = (int)key.size();
+  for(j=0; j < size_; j++){
+    key[j] = 0;
+  }
+  j = 0;
   for(int i=0; i < mer_len_arg; i++){
     //std::cout << kmer[i];
     //std::cout << nucleotide_map[kmer[i]];
-    key += nucleotide_map[kmer[i]];
-    key = key * 4;
+    key[j] = key[j] * 4;
+    key[j] += nucleotide_map[kmer[i]];
+    j = ((i+1) % 4 == 0) ? j + 1 : j;
     //std::cout << "   character " << kmer[i] << std::endl;
     //std::cout << "   mapped to " << nucleotide_map[kmer[i]] << std::endl;
     //std::cout << "   key " << key << std::endl;
   }
   //std::cout << std::endl;
-  return key;
+  //return key;
 }
 
 //template<typename iterator>
@@ -76,14 +85,14 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
   large_double sum_of_squared_counts1 = 0.0;
   large_double sum_of_squared_counts2 = 0.0;
   int mer_len_arg = 0;
-  std::unordered_map<uint64_t , int> kmers_map;
+  std::unordered_map< key_type , int , boost::hash<key_type> > kmers_map;
   std::unordered_map<char, int> nucleotide_map = {
         {'A',0},
         {'C',1},
         {'G',2},
         {'T',3}
   };
-  uint64_t key = 0;
+  key_type key;
   std::string line;
   std::string kmer;
   std::string count;
@@ -98,13 +107,15 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
   std::ifstream is1(db1);
   while (std::getline(is1, line))
   {
-    ++count1;
     std::stringstream linestream(line);
     std::getline(linestream,count,';');
     count_ = std::stod(count);
-    scaled_count = (int)(count_ * dist_ratio1 + 0.5);
-    total_1 += scaled_count;
-    max_elem1 = (max_elem1 < scaled_count) ? scaled_count : max_elem1;
+    if (count_ >= args.lower_count_arg){
+      ++count1;
+      scaled_count = (int)(count_ * dist_ratio1 + 0.5);
+      total_1 += scaled_count;
+      max_elem1 = (max_elem1 < scaled_count) ? scaled_count : max_elem1;
+    }
   }
   is1.close();
   std::cout << " first total count " << total_1 << std::endl;
@@ -114,13 +125,15 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
   std::ifstream is2(db2);
   while (std::getline(is2, line))
   {
-    ++count2;
     std::stringstream linestream(line);
     std::getline(linestream,count,';');
     count_ = std::stod(count);
-    scaled_count = (int)(count_ * dist_ratio2 + 0.5);
-    total_2 += scaled_count;
-    max_elem2 = (max_elem2 < scaled_count) ? scaled_count : max_elem2;
+    if (count_ >= args.lower_count_arg){
+      ++count2;
+      scaled_count = (int)(count_ * dist_ratio2 + 0.5);
+      total_2 += scaled_count;
+      max_elem2 = (max_elem2 < scaled_count) ? scaled_count : max_elem2;
+    }
   }
   is2.close();
   std::cout << " second total count " << total_2 << std::endl;
@@ -135,13 +148,16 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
     std::stringstream linestream(line);
     std::getline(linestream,count,';');
     std::getline(linestream,kmer,';');
-    count_ = std::stod(count);
     mer_len_arg = kmer.length();
+    key.resize((int)ceil((double)mer_len_arg / 4.0));
     std::cout << mer_len_arg << std::endl;
     std::cout << kmer << " " << count_ << std::endl;
-    key = get_key(kmer , nucleotide_map , mer_len_arg);
-    scaled_count = (int)(count_ * dist_ratio1 + 0.5);
-    kmers_map[key] = scaled_count;
+    count_ = std::stod(count);
+    if (count_ >= args.lower_count_arg){
+      get_key(key , kmer , nucleotide_map , mer_len_arg);
+      scaled_count = (int)(count_ * dist_ratio1 + 0.5);
+      kmers_map[key] = scaled_count;
+    }
   }
   while (std::getline(it1, line))
   {
@@ -149,9 +165,14 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
     std::getline(linestream,count,';');
     std::getline(linestream,kmer,';');
     count_ = std::stod(count);
-    key = get_key(kmer , nucleotide_map , mer_len_arg);
-    scaled_count = (int)(count_ * dist_ratio1 + 0.5);
-    kmers_map[key] = scaled_count;
+    if (count_ >= args.lower_count_arg){
+      get_key(key , kmer , nucleotide_map , mer_len_arg);
+      scaled_count = (int)(count_ * dist_ratio1 + 0.5);
+      if(kmers_map[key] > 0){
+        std::cerr << " problem! " << kmer << std::endl;
+      }
+      kmers_map[key] = scaled_count;
+    }
   }
   //it1.key().to_str(buffer);
   //std::cout << " first char " << buffer[0] << std::endl;
@@ -170,6 +191,7 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
   large_double d_total_2 = (large_double)total_2;
   large_double scaled_value1 = 0.0;
   large_double scaled_value2 = 0.0;
+  long long in_common_elements = 0;
   std::ifstream it2(db2);
   while (std::getline(it2, line))
   {
@@ -177,19 +199,22 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
     std::getline(linestream,count,';');
     std::getline(linestream,kmer,';');
     count_ = std::stod(count);
-    key = get_key(kmer , nucleotide_map , mer_len_arg);
-    map_value = kmers_map[key];
-    scaled_count = (int)(count_ * dist_ratio2 + 0.5);
-    dist_sum += (map_value < scaled_count) ? map_value : scaled_count;
-    //total_2 += (map_value > 0 && scaled_count > 0) ? scaled_count : 0;
-    freq1 = (large_double)map_value / d_total_1;
-    freq2 = (large_double)scaled_count / d_total_2;
-    freq_sum_of_abs_diff += (freq1 > freq2) ? freq1 - freq2 : freq2 - freq1;
-    scaled_value1 = (large_double)map_value / max_elem1;
-    scaled_value2 = (large_double)scaled_count / max_elem2;
-    sum_of_products += scaled_value1 * scaled_value2;
-    sum_of_squared_counts1 += scaled_value1 * scaled_value1;
-    sum_of_squared_counts2 += scaled_value2 * scaled_value2;
+    if (count_ >= args.lower_count_arg){
+      get_key(key , kmer , nucleotide_map , mer_len_arg);
+      map_value = kmers_map[key];
+      in_common_elements += (map_value > 0);
+      scaled_count = (int)(count_ * dist_ratio2 + 0.5);
+      dist_sum += (map_value < scaled_count) ? map_value : scaled_count;
+      //total_2 += (map_value > 0 && scaled_count > 0) ? scaled_count : 0;
+      freq1 = (large_double)map_value / d_total_1;
+      freq2 = (large_double)scaled_count / d_total_2;
+      freq_sum_of_abs_diff += (freq1 > freq2) ? freq1 - freq2 : freq2 - freq1;
+      scaled_value1 = (large_double)map_value / max_elem1;
+      scaled_value2 = (large_double)scaled_count / max_elem2;
+      sum_of_products += scaled_value1 * scaled_value2;
+      sum_of_squared_counts1 += scaled_value1 * scaled_value1;
+      sum_of_squared_counts2 += scaled_value2 * scaled_value2;
+    }
 
 
     /*if(scaled_count && map_value){
@@ -222,6 +247,8 @@ void dist(std::string& db1, std::string& db2, std::ostream &out , double dist_ra
   large_double factor = 2.0 * cosdist;
   large_double chord = sqrt(2.0 - factor);
   std::cout << " Chord distance " << chord << std::endl;
+  large_double jaccard = (large_double)in_common_elements / (large_double)(count1 + count2);
+  std::cout << " Jaccard distance " << jaccard << std::endl;
 
 
 }
@@ -235,7 +262,7 @@ void dump(iterator& it, std::ostream &out,
 
   if(args.bagsell_arg > 1) {
     std::cout.precision(10);
-    double delta = 0.05;
+    double delta = args.delta_arg / 2.0;
     double theta = args.theta_arg;
     #ifdef MULTIPLE_ELLS
     std::vector<double> deviations;
@@ -503,7 +530,7 @@ void dump(iterator& it, std::ostream &out,
         #endif
 
 
-        out << it.val() << ";" << it.key() << ";" << frequency << ";" << biased_freq << ";" << lower_bound << ";" << upper_bound << ";" << epsilon << "\n";
+        out << it.val() << ";" << it.key() << ";" << frequency << ";" << biased_freq << ";" << lower_bound << ";" << upper_bound << ";" << "\n";
         ++results;
       }
     }

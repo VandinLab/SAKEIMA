@@ -36,7 +36,7 @@ optional arguments:
   -l LAMBD, --lambd LAMBD
                         fraction of k-mers to sample (in (0,2))
   -e EPSILON, --epsilon EPSILON
-                        approximation accuracy parameter (in (0,1), def. theta + 2/dbtot)
+                        approximation accuracy parameter (in (0,1), def. theta - 2/dbtot)
   -ell ELL              size of bags to sample (>0, def. 1/theta - 1)
   -d DELTA, --delta DELTA
                         approximation confidence parameter (in (0,1), def. 0.1)

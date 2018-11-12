@@ -1,5 +1,5 @@
 # SAKEIMA
-##Sampling Algorithm for K-mers Approximation (Pellegrina, Pizzi, Vandin)
+## Sampling Algorithm for K-mers Approximation (Pellegrina, Pizzi, Vandin)
 `SAKEIMA` is a sampling-based algorithm for computing an approximation of the most frequent k-mers from a dataset of reads or a sequence. It's implementation is based on Jellyfish (version 2 https://github.com/gmarcais/Jellyfish ).
 
 
@@ -45,9 +45,6 @@ optional arguments:
 
 ```
 You need to specify the length `-k` of the k-mers and the path `-db` to the dataset (relative to the current folder); then, you need to provide in input the parameter theta using `-t` (`--theta`) or lambda `-l` (`--lambda`). The parameter theta is the frequency threshold for the frequent k-mers, while lambda is the fraction of k-mers to sample form the dataset. You can also fix both parameters. All the others parameters are optional; if not given, the algorithm automatically sets them. As example, you can provide the size (in terms of numer of positions) of k-mers in the dataset using the `-dt` option. If you do not, the algorithm automatically computes it.
-
-The following section describes the basic command for executing `SAKEIMA`.
-
 
 ## Computing ecological distances
 

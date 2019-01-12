@@ -139,7 +139,7 @@ struct filter_bf : public filter {
   }
 };
 
-enum OPERATION { COUNT, PRIME, UPDATE, FIRST_PASS, SECOND_PASS, SAMPLING_PASS };
+enum OPERATION { COUNT, PRIME, UPDATE, FIRST_PASS, SECOND_PASS, SAMPLING_PASS, DATASET_SIZE };
 template<typename MerIteratorType, typename ParserType>
 class mer_counter_base : public jellyfish::thread_exec {
   int                  nb_threads_;
@@ -180,6 +180,30 @@ public:
         std::cout << msg.str() << std::endl;
       }
     }
+      break;
+
+
+       case DATASET_SIZE:
+       {
+       long long total = 0;
+
+       {
+         std::stringstream msg;
+         msg << thid << " computing dataset size... \n";
+         std::cout << msg.str() << std::endl;
+       }
+
+        for( ; mers; ++mers) {
+          if((*filter_)(*mers)){
+            ++total;
+          }
+        }
+        {
+          std::stringstream msg;
+          msg << thid << " dataset size: " << total << "\n";
+          std::cout << msg.str() << std::endl;
+        }
+      }
       break;
 
       case SAMPLING_PASS:
@@ -474,7 +498,14 @@ int count_main(int argc, char *argv[])
     mer_filter.reset(new filter_bf(*bf));
   }
 
+
+
   double prob_to_pass = 1.0;
+
+  if(args.dbsize_flag){
+    do_op = DATASET_SIZE;
+  }
+  else
   if(args.lambda_arg < 1.0){
     std::cout << " sampling mode (one pass) selected " << std::endl;
     std::cout << " args.lambda_arg " << args.lambda_arg << std::endl;
@@ -575,7 +606,7 @@ int count_main(int argc, char *argv[])
         uint64_t max = args.upper_count_given ? args.upper_count_arg : std::numeric_limits<uint64_t>::max();
         try {
           merge_files(files, args.output_arg, header, min, max);
-        } catch(MergeError e) {
+        } catch(MergeError &e) {
           err::die(err::msg() << e.what());
         }
         if(!args.no_unlink_flag) {

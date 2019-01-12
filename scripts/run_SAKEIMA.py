@@ -11,25 +11,60 @@ parser.add_argument("-o","--output", help="path to output file (counts of freque
 parser.add_argument("-thr", type=int ,help="Number of threads to use for counting (>0, def. 1)",default=1)
 parser.add_argument("-dt","--dbtot", type=float ,help="dataset size (>0). Computed if not given")
 parser.add_argument("-t","--theta", type=float ,help="frequency threshold (in (0,1))")
-parser.add_argument("-l","--lambd", type=float ,help="fraction of k-mers to sample (in (0,2))")
+parser.add_argument("-l","--lambd", type=float ,help="desired fraction between sample size and dataset size (in (0,2))")
 parser.add_argument("-e","--epsilon", type=float ,help="approximation accuracy parameter (in (0,1), def. theta + 2/dbtot)")
 parser.add_argument("-ell", type=float ,help="size of bags to sample (>0, def. 1/theta - 1)")
 parser.add_argument("-d","--delta", type=float ,help="approximation confidence parameter (in (0,1), def. 0.1)",default=0.1)
 parser.add_argument("-v","--verbose", help="increase output verbosity (def. false)")
 args = parser.parse_args()
 
+
+def get_result(pattern , path ,  verbose=1):
+    fin = open(path,'r')
+    for line in fin:
+        if pattern in line:
+            line = line.replace('\n','')
+            if verbose == 1:
+                print line
+            return line[len(pattern):]
+    fin.close()
+
+def get_tot(numthreads, path):
+    counter = 0.0
+    for i in range(numthreads):
+        counter = counter + float(get_result(str(i)+" sampling pass: finished and inserted ",path,0))
+    print "sampling passes: finished and inserted "+str(counter)
+    return counter
+
+def get_dbtot(numthreads, path):
+    counter = 0.0
+    for i in range(numthreads):
+        counter = counter + float(get_result(str(i)+" dataset size: ",path,0))
+    return counter
+
+
 def get_total_positions(dataset):
     print "computing size of "+str(dataset)+"..."
-    numer_of_positions = 0
-    fin = open(dataset , 'r')
-    j = 0
-    for line in fin:
-        j = j + 1
-        # check if this line is a read or not
-        j = (j - 2) % 4
-        if j == 0:
-            numer_of_positions = numer_of_positions + len(line) - args.k
-    print "size of "+dataset+" = "+str(numer_of_positions)
+    jellyfish_path = "../bin/jellyfish"
+    work_dir_path = "work_dir/"
+    if not os.path.exists(work_dir_path):
+        os.system("mkdir "+str(work_dir_path))
+    temp_file_path = work_dir_path+"out_temp.txt"
+    if not args.output:
+        path_counts = work_dir_path+"counts_SAKEIMA_"+str(args.k)+".txt"
+    else:
+        path_counts = args.output
+    path_binary = work_dir_path+"SAKEIMA_"+str(args.k)+".mf"
+    path_reads = args.db
+    k = args.k
+    thr = args.thr
+    cmd = jellyfish_path+" count -m "+str(args.k)+" -s 1M -t "+str(thr)+" --dbsize -o "+str(path_binary)+" "+str(path_reads)+" > "+str(temp_file_path)
+    if args.verbose:
+        print cmd
+    os.system(cmd)
+    time.sleep(1)
+    numer_of_positions = float(get_dbtot(thr , temp_file_path))
+    print "size of "+str(dataset)+" is "+str(numer_of_positions)
     return numer_of_positions
 
 if not args.k:
@@ -185,22 +220,6 @@ print "theta = "+str(args.theta)
 print "epsilon = "+str(args.epsilon)
 print "ell = "+str(args.ell)
 
-def get_result(pattern , path ,  verbose=1):
-    fin = open(path,'r')
-    for line in fin:
-        if pattern in line:
-            line = line.replace('\n','')
-            if verbose == 1:
-                print line
-            return line[len(pattern):]
-    fin.close()
-
-def get_tot(numthreads, path):
-    counter = 0.0
-    for i in range(numthreads):
-        counter = counter + float(get_result(str(i)+" sampling pass: finished and inserted ",path,0))
-    print "sampling passes: finished and inserted "+str(counter)
-    return counter
 
 def run_sakeima():
     global sample_size

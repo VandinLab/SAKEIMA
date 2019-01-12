@@ -70,7 +70,7 @@ TEST(SquareBinaryMatrix, Initialization) {
       regular++;
       ASSERT_TRUE(sbi_m.is_identity())
 	<< "Not identity\n" << sbi_m.str() << std::endl;
-    } catch(SquareBinaryMatrix::SingularMatrix e) {
+    } catch(SquareBinaryMatrix::SingularMatrix &e) {
       singular++;
     }
   }

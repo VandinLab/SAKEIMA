@@ -53,6 +53,9 @@ option("eprob","e") {
 option("lambda") {
   description "SAKEIMA (sampling method): Poisson constant for sampling k-mers"
   double; default 1.0 }
+option("dbsize") {
+  description "Compute the size of the dataset"
+  flag; off }
 option("if") {
   description "Count only k-mers in this files"
   c_string; typestr "path"; multiple }
